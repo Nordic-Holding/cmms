@@ -13,8 +13,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   api:
-    image: intelloop/atlas-cmms-backend
-    container_name: atlas-cmms-backend
+    build:
+      context: ./api
     depends_on:
       - postgres
       - minio
@@ -93,8 +93,8 @@ services:
       - "8080"
 
   frontend:
-    image: intelloop/atlas-cmms-frontend
-    container_name: atlas-cmms-frontend
+    build:
+      context: ./frontend
     environment:
       API_URL: /api
       GOOGLE_KEY: ${GOOGLE_KEY:- }
@@ -133,7 +133,6 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
-    container_name: atlas_nginx
     depends_on:
       - frontend
       - api
@@ -142,9 +141,8 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       # If terminating TLS directly in this container, also mount certs:
       # - ./certs:/etc/nginx/certs:ro
-    ports:
-      - "3000:80"
-      # - "443:443"
+    expose:
+      - "80"
 
 volumes:
   postgres_data:
