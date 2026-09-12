@@ -13,8 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   api:
-    build:
-      context: ./api
+    image: ghcr.io/nordic-holding/cmms-api:latest
     depends_on:
       - postgres
       - minio
@@ -93,8 +92,7 @@ services:
       - "8080"
 
   frontend:
-    build:
-      context: ./frontend
+    image: ghcr.io/nordic-holding/cmms-frontend:latest
     environment:
       API_URL: /api
       GOOGLE_KEY: ${GOOGLE_KEY:- }
