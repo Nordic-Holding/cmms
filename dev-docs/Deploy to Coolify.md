@@ -61,9 +61,11 @@ reachable from outside the Compose network.
 
 Two settings are easy to miss:
 
-- **Advanced → Connect To Predefined Network** must be enabled. Coolify's Traefik only
-  discovers containers on its own `coolify` network; without this the domain resolves but
-  every request returns `503 no available server`.
+- **Advanced → Connect To Predefined Network** joins every container to the shared
+  `coolify` network, in addition to the per-resource network Coolify already attaches
+  Traefik to. Coolify's docs say to enable it only when the stack must reach other Coolify
+  resources, which this stack doesn't. It works either way here, and it is not a cause of
+  `503 no available server` on its own.
 - **Ports 80 and 443 must both be open** on the host firewall (AWS security group, Hetzner
   firewall, `ufw`, ...). Port 80 is not optional: Let's Encrypt validates over HTTP, so
   with it closed Traefik keeps serving its self-signed `TRAEFIK DEFAULT CERT` and browsers
@@ -134,8 +136,22 @@ If you see `traefik.http.routers.*` lines but no
 suffix — see step 2. Traefik knows which hostname to match but not what port to forward
 to, so the router has no server.
 
-If the port label is present, the container isn't on Traefik's network. Enable
-**Connect To Predefined Network** and redeploy. Verify with:
+If the port label **is** present and it still 503s, Traefik isn't reading labels at all.
+Check its own logs:
+
+```bash
+docker logs --since 5m coolify-proxy 2>&1 | grep -iE "error|too old" | tail -5
+```
+
+`client version 1.24 is too old. Minimum supported API version is 1.40` means the proxy's
+Traefik predates Docker API auto-negotiation, which landed in **v3.6.1**. Its Docker
+provider then fails every poll and freezes on the last config it managed to read, so
+corrected labels are never picked up. Fix it under **Servers → Proxy → Configuration** by
+raising the image, e.g. `traefik:v3.1` to `traefik:v3.7.13`, then restart the proxy. Edit
+it there rather than in `/data/coolify/proxy/docker-compose.yml`, which Coolify
+regenerates. No redeploy is needed — Traefik recovers on its next poll.
+
+To check the container is on a network Traefik can reach:
 
 ```bash
 docker network inspect coolify --format '{{range .Containers}}{{.Name}} {{end}}'
