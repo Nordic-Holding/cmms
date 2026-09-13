@@ -72,8 +72,29 @@ Two settings are easy to miss:
   refuse the connection.
 
 Set `PUBLIC_SERVER_URL` to the **`https://`** form of the domain, not `http://`. Traefik
-terminates TLS, and the frontend bakes this value in at build time, so an `http://` value
-makes the browser issue mixed-content requests that get blocked on an HTTPS page.
+terminates TLS, and the backend uses this value to build the presigned attachment URLs it
+hands to the browser; an `http://` value makes those mixed content on an HTTPS page, and
+browsers block them.
+
+Only the `api` service reads `PUBLIC_SERVER_URL`, at runtime. The frontend reaches the
+backend through the relative `API_URL: /api`, so nothing bakes the domain into an image
+and changing it never requires a rebuild.
+
+## Switching to a custom domain
+
+Nothing in the repository is domain-specific — `nginx` listens on `server_name _`, so it
+accepts any hostname. The change is DNS plus two Coolify fields.
+
+1. Add a DNS **A** record for the subdomain pointing at the server's public IP, and let it
+   propagate. Do this first: Let's Encrypt validates over HTTP against the new name, so
+   issuance fails until it resolves.
+2. Replace the domain on the `nginx` service, keeping the port suffix:
+   `https://atlas.example.com:80`
+3. Update `PUBLIC_SERVER_URL` to `https://atlas.example.com`.
+4. Redeploy. Traefik requests a certificate for the new name automatically.
+
+Don't point the record through a proxying CDN while using the `letsencrypt` resolver, and
+if the zone has a `CAA` record it must permit `letsencrypt.org`.
 
 ## 3. Deploy
 
