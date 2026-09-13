@@ -75,7 +75,7 @@ We'd love to have **new contributors**, so feel free to join us!
 1. Download:
 
 - [docker-compose.yml](./docker-compose.yml)
-- [nginx.conf](./nginx.conf)
+- [nginx/](./nginx) (reverse proxy config, built into the `nginx` image)
 - [.env.example](.env.example) → rename to `.env`
 
 2. Run:

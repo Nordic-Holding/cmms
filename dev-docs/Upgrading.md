@@ -12,7 +12,8 @@ Before upgrading, run a full backup following the [Backup Guide](./Backup.md).
 Download these files from the official repository and place them in your Atlas CMMS directory (next to your `.env` file):
 
 - **docker-compose.yml** — [Download latest](https://github.com/Grashjs/cmms/blob/main/docker-compose.yml)
-- **nginx.conf** — [Download latest](https://github.com/Grashjs/cmms/blob/main/nginx.conf)
+- **nginx/default.conf** — [Download latest](https://github.com/Grashjs/cmms/blob/main/nginx/default.conf)
+- **nginx/Dockerfile** — [Download latest](https://github.com/Grashjs/cmms/blob/main/nginx/Dockerfile)
 
 ## 3. Check for new environment variables
 
@@ -24,8 +25,10 @@ Also check the [README](https://github.com/grashjs/cmms) for documentation on ne
 
 ```bash
 docker compose pull
-docker compose up -d
+docker compose up -d --build
 ```
+
+`--build` is needed because the `api`, `frontend` and `nginx` images are built locally.
 
 ## 5. If something goes wrong
 

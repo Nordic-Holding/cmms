@@ -97,5 +97,13 @@ The Compose file pulls `quay.io/minio/minio` instead; don't change it back.
 
 **Postgres exits immediately** — `POSTGRES_PWD` is unset. See step 1.
 
+**`error mounting ".../nginx.conf" ... not a directory`** — a relative bind mount of a
+single file can't work here. Coolify rewrites relative paths to
+`/data/coolify/applications/<uuid>/` and creates any missing source with `mkdir -p`, so
+the config becomes a directory and nginx refuses to start. The `nginx` service therefore
+builds `nginx/default.conf` into its image instead of mounting it; keep it that way. Same
+rule for any file you'd otherwise mount — bake it in, or declare it under Coolify's
+**Storages → File mount**, which writes real files.
+
 **Frontend build fails with `JavaScript heap out of memory`** — raise
 `--max_old_space_size` in `frontend/Dockerfile`, and check the host has headroom for it.

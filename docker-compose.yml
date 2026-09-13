@@ -132,15 +132,15 @@ services:
     command: server --address ":9000" --console-address ":9001" /data
 
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ./nginx
     depends_on:
       - frontend
       - api
       - minio
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # If terminating TLS directly in this container, also mount certs:
-      # - ./certs:/etc/nginx/certs:ro
+    # If terminating TLS directly in this container, mount certs:
+    # volumes:
+    #   - ./certs:/etc/nginx/certs:ro
     expose:
       - "80"
 
