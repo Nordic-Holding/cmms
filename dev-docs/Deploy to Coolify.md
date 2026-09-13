@@ -50,6 +50,20 @@ Set the domain on the **`nginx`** service, pointing at container port **80**.
 and `/storage/` to MinIO. The other four services use `expose` only, so they are not
 reachable from outside the Compose network.
 
+Two settings are easy to miss:
+
+- **Advanced → Connect To Predefined Network** must be enabled. Coolify's Traefik only
+  discovers containers on its own `coolify` network; without this the domain resolves but
+  every request returns `503 no available server`.
+- **Ports 80 and 443 must both be open** on the host firewall (AWS security group, Hetzner
+  firewall, `ufw`, ...). Port 80 is not optional: Let's Encrypt validates over HTTP, so
+  with it closed Traefik keeps serving its self-signed `TRAEFIK DEFAULT CERT` and browsers
+  refuse the connection.
+
+Set `PUBLIC_SERVER_URL` to the **`https://`** form of the domain, not `http://`. Traefik
+terminates TLS, and the frontend bakes this value in at build time, so an `http://` value
+makes the browser issue mixed-content requests that get blocked on an HTTPS page.
+
 ## 3. Deploy
 
 Expect 8–10 minutes on the first deploy, less afterwards once Docker layer caching
@@ -96,6 +110,18 @@ more RAM or lower `--max_old_space_size` in `frontend/Dockerfile`.
 The Compose file pulls `quay.io/minio/minio` instead; don't change it back.
 
 **Postgres exits immediately** — `POSTGRES_PWD` is unset. See step 1.
+
+**`503 no available server` on the domain** — Traefik matched the route but has no
+backend, meaning the `nginx` container isn't on the `coolify` network. Enable **Connect To
+Predefined Network** and redeploy. Verify with:
+
+```bash
+docker network inspect coolify --format '{{range .Containers}}{{.Name}} {{end}}'
+```
+
+**Browser warns about `TRAEFIK DEFAULT CERT`, or the `http://` URL times out** — port 80
+is blocked at the firewall, so certificate issuance never completed. Open it, then
+redeploy to trigger a new certificate order.
 
 **`error mounting ".../nginx.conf" ... not a directory`** — a relative bind mount of a
 single file can't work here. Coolify rewrites relative paths to
