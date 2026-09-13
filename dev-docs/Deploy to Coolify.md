@@ -44,7 +44,16 @@ backend uses it to build presigned attachment URLs and email links.
 
 ## 2. Set the domain
 
-Set the domain on the **`nginx`** service, pointing at container port **80**.
+Set the domain on the **`nginx`** service, and include the container port explicitly:
+
+```
+https://cmms.example.com:80
+```
+
+The `:80` suffix is not optional. Coolify infers a service's target port from its
+`ports:` mapping, and `nginx` only uses `expose`, so without it Coolify emits Traefik
+*routers* with no matching *service*. The hostname then resolves but every request
+returns `503 no available server`.
 
 `nginx` is the only entry point: it proxies `/` to the frontend, `/api/` to the backend
 and `/storage/` to MinIO. The other four services use `expose` only, so they are not
@@ -111,12 +120,32 @@ The Compose file pulls `quay.io/minio/minio` instead; don't change it back.
 
 **Postgres exits immediately** — `POSTGRES_PWD` is unset. See step 1.
 
-**`503 no available server` on the domain** — Traefik matched the route but has no
-backend, meaning the `nginx` container isn't on the `coolify` network. Enable **Connect To
-Predefined Network** and redeploy. Verify with:
+**`503 no available server` on the domain** — Traefik matched a route but has no backend
+behind it. There are two causes, so check the labels first:
+
+```bash
+C=$(docker ps -qf name=nginx)
+docker inspect $C --format '{{range $k,$v := .Config.Labels}}{{$k}}={{$v}}
+{{end}}' | grep -i traefik
+```
+
+If you see `traefik.http.routers.*` lines but no
+`traefik.http.services.*.loadbalancer.server.port`, the domain is missing its `:80`
+suffix — see step 2. Traefik knows which hostname to match but not what port to forward
+to, so the router has no server.
+
+If the port label is present, the container isn't on Traefik's network. Enable
+**Connect To Predefined Network** and redeploy. Verify with:
 
 ```bash
 docker network inspect coolify --format '{{range .Containers}}{{.Name}} {{end}}'
+```
+
+To rule out the app itself, confirm nginx serves from inside its own container — a 200
+here means the problem is entirely in the proxy layer:
+
+```bash
+docker exec $(docker ps -qf name=nginx) wget -qO- -S http://127.0.0.1/ 2>&1 | head -3
 ```
 
 **Browser warns about `TRAEFIK DEFAULT CERT`, or the `http://` URL times out** — port 80
