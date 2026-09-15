@@ -9,10 +9,8 @@ import { useContext, useEffect, useState } from 'react';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { CustomSnackBarContext } from '../../contexts/CustomSnackBarContext';
 import * as React from 'react';
-import { Asset } from 'expo-asset';
 import { useAppTheme } from '../../custom-theme';
-import { getApiUrl } from '../../config';
-import api, { authHeader, getErrorMessage, isNetworkError } from '../../utils/api';
+import { getErrorMessage, isNetworkError } from '../../utils/api';
 import { useDispatch, useSelector } from '../../store';
 import { getInstanceConfig } from '../../slices/instanceConfig';
 
@@ -86,8 +84,7 @@ export default function LoginScreen({
             handleSubmit,
             isSubmitting,
             touched,
-            values,
-            setFieldValue
+            values
           }) => (
             <View style={{ alignSelf: 'stretch', paddingHorizontal: 30 }}>
               <TextInput
@@ -149,16 +146,6 @@ export default function LoginScreen({
                   </Button>
                 </>
               )}
-
-              <Button
-                mode={'text'}
-                onPress={() => navigation.navigate('CustomServer')}
-                style={{
-                  marginTop: 20
-                }}
-              >
-                {t('custom_server')}
-              </Button>
             </View>
           )}
         </Formik>

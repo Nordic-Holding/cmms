@@ -3,7 +3,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 import fs from 'fs';
 import path from 'path';
 
-const apiUrl = process.env.API_URL;
+const apiUrl = process.env.API_URL ?? 'https://atlas.nordicbh.com/api';
 const clarityId = process.env.CLARITY_ID;
 const googleServicesPlist = process.env.GOOGLE_SERVICES_PLIST;
 
@@ -31,8 +31,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#ffffff'
   },
   updates: {
+    enabled: false,
     fallbackToCacheTimeout: 0,
-    url: 'https://u.expo.dev/803b5007-0c60-4030-ac3a-c7630b223b92',
     assetPatternsToBeBundled: ['**/*']
   },
   ios: {
